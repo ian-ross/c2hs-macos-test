@@ -1,0 +1,10 @@
+language: objective-c
+
+before_install:
+  - date
+  - export PATH="$HOME/Library/Haskell/bin:$PATH"
+  - ./setup_osx.sh
+script:
+  - ./build.sh
+after_script:
+  - date
