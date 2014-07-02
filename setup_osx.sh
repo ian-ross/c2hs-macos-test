@@ -5,4 +5,3 @@ brew update
 cabal update
 export HSOPTS="-j --disable-documentation --disable-library-profiling --disable-executable-profiling"
 cabal install $HSOPTS cabal-install
-cabal install $HSOPTS c2hs
