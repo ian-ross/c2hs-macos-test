@@ -4,5 +4,6 @@ cabal --disable-documentation --disable-library-profiling --disable-executable-p
 cd ..
 c2hs --version
 cd issue-82
-cat /usr/include/string.h
+cat -n /usr/include/string.h
 c2hs --cpp=clang -d trace -d genbind -d ctrav Issue82.chs
+cat -n Issue82.i
