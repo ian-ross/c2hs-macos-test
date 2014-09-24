@@ -1,5 +1,6 @@
 module Main where
 
+{# nonGNU #}
 #include "string.h"
 
 main :: IO ()
