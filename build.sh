@@ -5,4 +5,4 @@ cd ..
 c2hs --version
 cd issue-82
 cat /usr/include/string.h
-c2hs -d trace -d genbind -d ctrav Issue82.chs
+c2hs --cpp=clang -d trace -d genbind -d ctrav Issue82.chs
