@@ -1,0 +1,138 @@
+pristine:d521e874c96419bff8c187d42ddeec06be320593a07e5711a1f875ff5c5f7a5b
+Starting with inventory:
+0000054322-d59e0318fc8136d8db14e4d3ecdcb23507754928d5250053656221c1094540df
+[TAG 0.4.1
+benedikt.huber@gmail.com**20110816161910
+ Ignore-this: 3df26518e1cc264187d00aa8bc9aad2a
+] 
+hash: 0000007652-b9d98f2725e6167ee340a2b5af56984c6dd657e5dade48c059a6ad745ecd2210
+[Bump version number after release
+benedikt.huber@gmail.com**20110817153002
+ Ignore-this: 754416efc6b50fe597ab713c3bc25771
+] 
+hash: 0000000196-17f5ea55ec766c468828db7b0d2eae47d3ed5a4cc1413fe2368146995e22fa7b
+[Patch for alex-3.0
+benedikt.huber@gmail.com**20110824112021
+ Ignore-this: b0c7e6a7edc7a2184638646f23af965d
+] 
+hash: 0000003252-9140e7250cddd11e1fe0a35fffc82a99a3046b79ffdf33f5bf3cbba04ce108cf
+[Export Annotated type class from AST module
+Alexander Bernauer <bernauer@inf.ethz.ch>**20120612152019
+ Ignore-this: 6c213478eb143738cebd0b628486940
+] 
+hash: 0000000309-5951c778dfe45a0e19c9f674fd8a0834bc022f85c5ec03ab3e1de3448596a36a
+[Fix parsing and printing of octal character escapes.
+Aaron Tomb <aarontomb@gmail.com>**20130227232015
+ Ignore-this: 686d0697dc334182ba39db2c4dcf3a5
+ 
+ The lexer correctly identifies octal character escape sequences as 1-3
+ octal digits. However, the later code that converts strings to and from
+ lists of Chars incorrectly interpreted sequences of valid octal digits
+ of _any length_ as a single escape sequence. Therefor, strings such as
+ this:
+ 
+     "\00216\003172\007IN-ADDR\004ARPA"
+ 
+ were parsed and pretty-printed incorrectly.
+] 
+hash: 0000001266-98d45c56e52f983d35a594faf488e4785029a644d7937339718b6cb2ed331ec6
+[Update Changelog (March 2013)
+benedikt.huber@gmail.com**20130319150641
+ Ignore-this: 4565f563e57cf0bd330521cc909387ab
+] 
+hash: 0000000526-a1fc7f0bb74452aa4278f55b4dbb89da2041a526dc2dc34299135628364ccdb9
+[Improve printing of SUERefs and Ident
+benedikt.huber@gmail.com**20130319150743
+ Ignore-this: fdf2371886cddbd95ed5c25c5cd4a136
+] 
+hash: 0000001355-84b543f5704104d67fdd9aee153669510c64ae46970ad131251304ac4ca0f2d0
+[Update README/Language Extensions for 7.4
+benedikt.huber@gmail.com**20130319151535
+ Ignore-this: bc01f9cf874a175f34ba210cf5e3cad7
+] 
+hash: 0000000673-c12f1d9f518850798cf2535edf2431d863b4b5f2c4f31266832a562d7c58c0fc
+[harness: default TMPDIR /tmp/ for attributes
+benedikt.huber@gmail.com**20130319151557
+ Ignore-this: 9ffb8ba4232b803bf5728774a96f075
+] 
+hash: 0000000354-3747a6b5152e23e1d69eca9fa33518593049e69dc5d89bd33e43efa19ed60beb
+[TypeCheck: Return Left str instead of fail str (do not rely on MonadError instance of Either)
+benedikt.huber@gmail.com**20130319153959
+ Ignore-this: 6b9aba632b0e91690ede47d0f96d5b53
+] 
+hash: 0000000339-60d69722e34848923e2c13c38738f36a8d49cb0a1d9f217394b00cd0687ec9ba
+[Bump version to 0.4.2.1
+benedikt.huber@gmail.com**20130319161054
+ Ignore-this: 7235d621604a091ff9753047a5f1126b
+] 
+hash: 0000000188-7f29bba59a538897f718813739bf56b4dd7e1f49f93d5dd2b660fc0b9e344f33
+[Fix bug caused by applying posFile to nopos (reported by Mikhail Sosonkin)
+benedikt.huber@gmail.com**20130812101059
+ Ignore-this: ac92fd00e11c1d1ba593eec32d26f7d
+] 
+hash: 0000002348-1021c91f4b997e37250c4158febac5d3e8d1c31f1432bf7f1e09edbffb0c6e2b
+[Do not derive Error instances for newtypes (type parameter has non-parametric role)
+benedikt.huber@gmail.com**20130813160042
+ Ignore-this: 80680a75bbae51b61bc7a809b88d2a0
+] 
+hash: 0000000912-367d7777ed87321c883172c7d04a118ad0f534eb20486092174d07a6d8dcaeee
+[Allow unicode characters in string/char literals and filenames
+benedikt.huber@gmail.com**20140111192704
+ Ignore-this: c490e76bf3453271ccdd29ec8fd78461
+] 
+hash: 0000000897-2844aa77f25a11c25b34593bda3f54a8354fa4a3b422ce49d46a5137e4729cfe
+[test-framework: use Control.Excpetion.catch instead of Prelude.catch (no longer available in ghc-7.6)
+benedikt.huber@gmail.com**20140327215520
+ Ignore-this: 2e732c793b8eea1e34e3402c1612910f
+] 
+hash: 0000000777-7466793ed0d9c6a9f9f02055d670acd81dee42834b7ea2b461824ded18a873d2
+[test/harness: adapt test cases to work with Apple LLVM 5.1
+benedikt.huber@gmail.com**20140330072030
+ Ignore-this: f459c619dd21f0eb9dad9aa2a46c7832
+] 
+hash: 0000001757-cabcabd61fc53e29133a944b5645a04ba4df695e174a9a66f02a41c6f61006f7
+[test/harness: more compact Makefile
+benedikt.huber@gmail.com**20140330073401
+ Ignore-this: 7f6850b43656f6b0775e938504939ed8
+] 
+hash: 0000001193-166f2597e04df170648dadf75c6011d34cdb4bc80c179333d8cd26a917096434
+[examples: simplify Makefile, fix DumpAst
+benedikt.huber@gmail.com**20140330095849
+ Ignore-this: 477893567fd53fb1768cc9ba5fe8ad58
+] 
+hash: 0000001258-0a795698d52abf718ad1c9db7e68ab01debcf26f4a1e8ba4978c83934fb13bb1
+[Bump Version to 0.4.3
+benedikt.huber@gmail.com**20140330102042
+ Ignore-this: bea07268b6649b35ab7ef6f6126693d
+] 
+hash: 0000000185-ecbcb19ccd440d9f2094fb1be2b7229b6b8268921626cd3a5e4603b7f0e47027
+[test/suite/smoke: remove include of stdio.h (Apple issues)
+benedikt.huber@gmail.com**20140330110057
+ Ignore-this: 38fd8a4569889bb9afbf476c38d4ddbe
+] 
+hash: 0000000564-3990c493e88dbe36855e6631cc9170052ab9f0e326ed89253fdf620732b41f28
+[Bump version number for re-upload to hackage
+benedikt.huber@gmail.com**20140410052631
+ Ignore-this: 690e2c69d9eeb0b4ab10c0cac280de66
+] 
+hash: 0000000207-7af756de20747ad80d892858ff6124763b99cc89a5c22f39fe8a3d273e901133
+[Bump version for a new hackage release (updated alex/happy for ghc-7.8)
+benedikt.huber@gmail.com**20140414050546
+ Ignore-this: 3c14721bcf5f22bb783219990f978826
+] 
+hash: 0000000234-747a559992503f4722182f96848a660e1a9cc23b87d74d10ec77ee2f315c8e3e
+[Bump version to 0.4.6 (start working on next maintainance release)
+benedikt.huber@gmail.com**20140824062557
+ Ignore-this: 1619a97d87861bba2517249d5bb01a71
+] 
+hash: 0000000229-cffac828e114ff6e271929c154af21d5d73ac2ae0245fe754dfb5013a7112a07
+[Get ready for AMP and fix a deprecated import
+Index Int <vlad.z.4096@gmail.com>**20140823235919
+ Ignore-this: c40d1b942bc1c83adcb96a15f21f298c
+] 
+hash: 0000000843-8bb41ab7208dc6863ac3982f3e9db3fc866e53d930cccbc748c9b4c7d1370f86
+[Wojciech Danilo: update language-c to work with GHC 6.9
+benedikt.huber@gmail.com**20140824071028
+ Ignore-this: 62fa155d2d52560818d4f27e9a2f9541
+] 
+hash: 0000000450-77a6973560fa516c861e7a11987bd41578997f8f25f8a87e596749bff0b51965
