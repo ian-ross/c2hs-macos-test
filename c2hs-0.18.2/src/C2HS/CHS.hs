@@ -77,7 +77,7 @@
 --  alias    -> `underscoreToCase' | `upcaseFirstLetter'
 --            | `downcaseFirstLetter'
 --            | ident `as' ident
---  ptrkind  -> [`foreign' | `stable'] ['newtype' | '->' ident]
+--  ptrkind  -> [`foreign' [`finalizer' idalias] | `stable'] ['newtype' | '->' ident]
 --
 --  If `underscoreToCase', `upcaseFirstLetter', or `downcaseFirstLetter'
 --  occurs in a translation table, it must be the first entry, or if two of
@@ -344,21 +344,24 @@ instance Pos CHSAPath where
 -- | pointer options
 --
 
-data CHSPtrType = CHSPtr                        -- standard Ptr from Haskell
-                | CHSForeignPtr                 -- a pointer with a finalizer
-                | CHSStablePtr                  -- a pointer into Haskell land
+data CHSPtrType = CHSPtr
+                  -- standard Ptr from Haskell
+                | CHSForeignPtr (Maybe (Ident, Maybe Ident))
+                  -- a foreign pointer possibly with a finalizer
+                | CHSStablePtr
+                  -- a pointer into Haskell land
                 deriving (Eq)
 
 instance Show CHSPtrType where
   show CHSPtr            = "Ptr"
-  show CHSForeignPtr     = "ForeignPtr"
+  show (CHSForeignPtr _) = "ForeignPtr"
   show CHSStablePtr      = "StablePtr"
 
 instance Read CHSPtrType where
   readsPrec _ (                            'P':'t':'r':rest) =
     [(CHSPtr, rest)]
   readsPrec _ ('F':'o':'r':'e':'i':'g':'n':'P':'t':'r':rest) =
-    [(CHSForeignPtr, rest)]
+    [(CHSForeignPtr Nothing, rest)]
   readsPrec _ ('S':'t':'a':'b':'l':'e'    :'P':'t':'r':rest) =
     [(CHSStablePtr, rest)]
   readsPrec p (c:cs)
@@ -568,9 +571,11 @@ showCHSHook (CHSPointer star ide oalias ptrType isNewtype oRefType emit _) =
   . (if star then showString "*" else showString "")
   . showIdAlias ide oalias
   . (case ptrType of
-       CHSForeignPtr -> showString " foreign"
-       CHSStablePtr  -> showString " stable"
-       _             -> showString "")
+       CHSForeignPtr Nothing    -> showString " foreign"
+       CHSForeignPtr (Just (fide, foalias)) ->
+         showString " foreign finalizer " . showIdAlias fide foalias
+       CHSStablePtr             -> showString " stable"
+       _                        -> showString "")
   . (case (isNewtype, oRefType) of
        (True , _        ) -> showString " newtype"
        (False, Just ide') -> showString " -> " . showCHSIdent ide'
@@ -641,7 +646,7 @@ showCHSParm (CHSParm oimMarsh hsTyStr twoCVals oomMarsh _ comment)  =
     showHsVerb str = showChar '`' . showString str . showChar '\''
     showComment str = if null str
                       then showString ""
-                      else showString "-- " . showString str . showChar '\n'
+                      else showString "--" . showString str . showChar '\n'
 
 showCHSTrans :: CHSTrans -> ShowS
 showCHSTrans (CHSTrans _2Case chgCase assocs)  =
@@ -1206,9 +1211,16 @@ parsePointer hkpos pos toks =
        : frags
   where
     parsePtrType :: [CHSToken] -> CST s (CHSPtrType, [CHSToken])
-    parsePtrType (CHSTokForeign _:toks') = return (CHSForeignPtr, toks')
+    parsePtrType (CHSTokForeign _:toks') = do
+      (final, toks'') <- parseFinalizer toks'
+      return (CHSForeignPtr final, toks'')
     parsePtrType (CHSTokStable _ :toks') = return (CHSStablePtr, toks')
     parsePtrType                  toks'  = return (CHSPtr, toks')
+
+    parseFinalizer (CHSTokFinal _ : CHSTokIdent _ ide : toks') = do
+      (oalias, toks'') <- parseOptAs ide False toks'
+      return (Just (ide, oalias), toks'')
+    parseFinalizer toks' = return (Nothing, toks')
 
     norm _   Nothing                   = Nothing
     norm ide (Just ide') | ide == ide' = Nothing

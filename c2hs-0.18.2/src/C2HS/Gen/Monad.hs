@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 --  C->Haskell Compiler: monad for the binding generator
 --
 --  Author : Manuel M T Chakravarty
@@ -77,7 +78,7 @@ module C2HS.Gen.Monad (
 ) where
 
 -- standard libraries
-import Data.Char  (toUpper, toLower, isSpace)
+import Data.Char  (toUpper, toLower)
 import Data.List  (find)
 import Data.Maybe (fromMaybe)
 import qualified Data.Map as Map (empty, insert, lookup, union, toList, fromList)
@@ -236,7 +237,7 @@ chopIdent str = goChop 0 str
           goChop level ('(':rest) = goChop (level+1) rest
           goChop level (')':rest) = goChop (level-1) rest
           goChop level (_  :rest) = goChop level rest
-          goChop level [] = []
+          goChop _     [] = []
 
 extractIdent :: String -> (Ident, String)
 extractIdent str =
@@ -338,6 +339,10 @@ delayCode hook str  =
               && ide   == ide'   -> return frags'
             | otherwise          -> err (posOf ide) (posOf ide')
           Nothing                -> return $ frags' ++ [newEntry]
+      delay hook'@(CHSPointer _ _ _ _ _ _ _ _) frags' =
+        case find (\(hook'', _) -> hook'' == hook') frags' of
+          Just (CHSPointer _ _ _ _ _ _ _ _, _) -> return frags'
+          Nothing                              -> return $ frags' ++ [newEntry]
       delay _ _                                  =
         interr "GBMonad.delayCode: Illegal delay!"
       --

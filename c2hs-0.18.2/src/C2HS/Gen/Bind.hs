@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 --  C->Haskell Compiler: binding generator
 --
 --  Copyright (c) [1999..2003] Manuel M T Chakravarty
@@ -194,10 +195,10 @@ lookupDftMarshIn hsty _ = do
     --  2. naked and newtype pointer hooks
     (False, Just (Pointer CHSPtr _)) -> Just (Left idIde, CHSValArg)
     --  3. foreign pointer hooks
-    (False, Just (Pointer CHSForeignPtr False)) ->
+    (False, Just (Pointer (CHSForeignPtr _) False)) ->
       Just (Left withForeignPtrIde, CHSIOArg)
     --  4. foreign newtype pointer hooks
-    (False, Just (Pointer CHSForeignPtr True)) ->
+    (False, Just (Pointer (CHSForeignPtr _) True)) ->
       Just (Right $ "with" ++ hsty, CHSIOArg)
     _ -> Nothing
 -- FIXME: handle array-list conversion
@@ -228,20 +229,35 @@ lookupDftMarshOut hsTy     [PtrET ty]  | showExtType ty == hsTy =
 lookupDftMarshOut hsty _ = do
   om <- readCT objmap
   isenum <- queryEnum hsty
-  return $ case (isenum, (internalIdent hsty) `lookup` om) of
+  res <- case (isenum, (internalIdent hsty) `lookup` om) of
     --  1. enumeration hooks
-    (True, Nothing) -> Just (Right "toEnum . fromIntegral", CHSValArg)
+    (True, Nothing) -> return $ Just (Right "toEnum . fromIntegral", CHSValArg)
     --  2. naked and newtype pointer hooks
-    (False, Just (Pointer CHSPtr _)) -> Just (Left idIde, CHSValArg)
+    (False, Just (Pointer CHSPtr _)) -> return $ Just (Left idIde, CHSValArg)
     --  3. foreign pointer hooks
-    (False, Just (Pointer CHSForeignPtr False)) ->
-      Just (Left newForeignPtrIde, CHSIOArg)
+    (False, Just (Pointer (CHSForeignPtr Nothing) False)) ->
+      return $ Just (Left newForeignPtr_Ide, CHSIOArg)
+    (False, Just (Pointer (CHSForeignPtr (Just fin)) False)) -> do
+      code <- newForeignPtrCode fin
+      return $ Just (Right $ code, CHSIOArg)
     --  4. foreign newtype pointer hooks
-    (False, Just (Pointer CHSForeignPtr True)) ->
-      Just (Right $ "newForeignPtr_ >=> (return . " ++ hsty ++ ")", CHSIOArg)
-    _ -> Nothing
+    (False, Just (Pointer (CHSForeignPtr Nothing) True)) ->
+      return $ Just (Right $ "newForeignPtr_ >=> (return . " ++
+                     hsty ++ ")", CHSIOArg)
+    (False, Just (Pointer (CHSForeignPtr (Just fin)) True)) -> do
+      code <- newForeignPtrCode fin
+      return $ Just (Right $ code ++ " >=> (return . " ++
+                     hsty ++ ")", CHSIOArg)
+    _ -> return Nothing
+  return res
 -- FIXME: add combination, such as "peek" plus "cIntConv" etc
 -- FIXME: handle array-list conversion
+
+newForeignPtrCode :: (Ident, Maybe Ident) -> GB String
+newForeignPtrCode (cide, ohside) = do
+  (_, cide') <- findFunObj cide True
+  let fin = (identToString cide') `maybe` identToString $ ohside
+  return $ "newForeignPtr " ++ fin
 
 
 -- | check for integral Haskell types
@@ -292,7 +308,7 @@ isFloatCPrimType  = (`elem` [CFloatPT, CDoublePT, CLDoublePT])
 --
 voidIde, cFromBoolIde, cToBoolIde, cIntConvIde, cFloatConvIde,
   withCStringIde, peekIde, peekCStringIde, idIde,
-  newForeignPtrIde, withForeignPtrIde :: Ident
+  newForeignPtr_Ide, withForeignPtrIde :: Ident
 voidIde           = internalIdent "void"         -- never appears in the output
 cFromBoolIde      = internalIdent "fromBool"
 cToBoolIde        = internalIdent "toBool"
@@ -302,7 +318,7 @@ withCStringIde    = internalIdent "withCString"
 peekIde           = internalIdent "peek"
 peekCStringIde    = internalIdent "peekCString"
 idIde             = internalIdent "id"
-newForeignPtrIde  = internalIdent "newForeignPtr_"
+newForeignPtr_Ide = internalIdent "newForeignPtr_"
 withForeignPtrIde = internalIdent "withForeignPtr"
 
 
@@ -625,12 +641,13 @@ expandHook (CHSOffsetof path pos) _ =
               _             -> return offset
           SUType _ -> return offset
     checkType _ _ = offsetDerefErr pos
-expandHook (CHSPointer isStar cName oalias ptrKind isNewtype oRefType emit
-              pos) _ =
+expandHook hook@(CHSPointer isStar cName oalias ptrKind isNewtype oRefType emit
+                 pos) _ =
   do
     traceInfoPointer
     let hsIde  = fromMaybe cName oalias
         hsName = identToString hsIde
+
     hsIde `objIs` Pointer ptrKind isNewtype     -- register Haskell object
     --
     -- we check for a typedef declaration or tag (struct, union, or enum)
@@ -663,6 +680,7 @@ expandHook (CHSPointer isStar cName oalias ptrKind isNewtype oRefType emit
             --   allow `... -> fun HSTYPE' to explicitly mark function
             --   types if this ever becomes important
         traceInfoHsType hsName hsType
+        doFinalizer hook ptrKind (if isNewtype then hsName else "()")
         pointerDef isStar cNameFull hsName ptrKind isNewtype hsType isFun emit
       Right tag -> do                           -- found a tag definition
         let cNameFull = tagName tag
@@ -673,6 +691,7 @@ expandHook (CHSPointer isStar cName oalias ptrKind isNewtype oRefType emit
                        Nothing      -> "()"
                        Just hsType' -> identToString hsType'
         traceInfoHsType hsName hsType
+        doFinalizer hook ptrKind (if isNewtype then hsName else "()")
         pointerDef isStar cNameFull hsName ptrKind isNewtype hsType False emit
   where
     -- remove a pointer level if the first argument is `False'
@@ -792,6 +811,7 @@ instance Num CInteger where
   fromInteger = cInteger
   (+) a b = cInteger (getCInteger a + getCInteger b)
   (*) a b = cInteger (getCInteger a * getCInteger b)
+  (-) a b = cInteger (getCInteger a - getCInteger b)
   abs a = cInteger (abs $ getCInteger a)
   signum a = cInteger (signum $ getCInteger a)
 -- | Haskell code for an instance declaration for 'Enum'
@@ -1022,7 +1042,7 @@ funDef isPure hsLexeme fiLexeme extTy octxt parms parm marsh2 pos hkpos =
       let
         showComment str = if null str
                           then ""
-                          else " -- " ++ str ++ "\n"
+                          else " --" ++ str ++ "\n"
         ctxt   = case octxt of
                    Nothing      -> ""
                    Just ctxtStr -> ctxtStr ++ " => "
@@ -1380,9 +1400,9 @@ pointerDef isStar cNameFull hsName ptrKind isNewtype hsType isFun emit =
         ptrType = ptrCon ++ " (" ++ ptrArg ++ ")"
         thePtr  = (isStar, cNameFull)
     case ptrKind of
-      CHSForeignPtr -> thePtr `ptrMapsTo` ("Ptr (" ++ ptrArg ++ ")",
-                                           "Ptr (" ++ ptrArg ++ ")")
-      _             -> thePtr `ptrMapsTo` (hsName, hsName)
+      CHSForeignPtr _ -> thePtr `ptrMapsTo` ("Ptr (" ++ ptrArg ++ ")",
+                                             "Ptr (" ++ ptrArg ++ ")")
+      _               -> thePtr `ptrMapsTo` (hsName, hsName)
     return $
       case (emit, isNewtype) of
         (False, _)     -> ""    -- suppress code generation
@@ -1396,11 +1416,43 @@ pointerDef isStar cNameFull hsName ptrKind isNewtype hsType isFun emit =
       -- safe unwrapping function automatically
       --
       withForeignFun
-        | ptrKind == CHSForeignPtr =
+        | isForeign ptrKind =
           "\nwith" ++ hsName ++ " :: " ++
           hsName ++ " -> (Ptr " ++ hsName ++ " -> IO b) -> IO b" ++
           "\nwith" ++ hsName ++ " (" ++ hsName ++ " fptr) = withForeignPtr fptr"
         | otherwise                = ""
+      isForeign (CHSForeignPtr _) = True
+      isForeign _                 = False
+
+-- | generate a foreign pointer finalizer import declaration that is
+-- put into the delayed code
+--
+doFinalizer :: CHSHook -> CHSPtrType -> String -> GB ()
+doFinalizer hook (CHSForeignPtr (Just (cide, ohside))) ptrHsIde = do
+  (ObjCO cdecl, cide') <- findFunObj cide True
+  let finCIde  = identToString cide'
+      finHsIde = finCIde `maybe` identToString $ ohside
+      cdecl'   = cide' `simplifyDecl` cdecl
+  header <- getSwitch headerSB
+  delayCode hook (finalizerImport (extractCallingConvention cdecl')
+                  header finCIde finHsIde ptrHsIde)
+  traceFunType ptrHsIde
+  where
+    traceFunType et = traceGenBind $
+      "Imported finalizer function type: " ++ et ++ "\n"
+doFinalizer _ _ _ = return ()
+
+-- | Haskell code for the foreign import declaration needed by foreign
+-- pointer finalizers.
+--
+finalizerImport :: CallingConvention -> String -> String -> String ->
+                   String -> String
+finalizerImport cconv header ident hsIdent hsPtrName  =
+  "foreign import " ++ showCallingConvention cconv ++ " " ++ show entity ++
+  "\n  " ++ hsIdent ++ " :: FinalizerPtr " ++ hsPtrName ++ "\n"
+  where
+    entity | null header = "&" ++ ident
+           | otherwise   = header ++ " &" ++ ident
 
 -- | generate the class and instance definitions for a class hook
 --
